@@ -251,6 +251,13 @@ module.exports = async function handler(req, res) {
       success: true,
       total: results.length,
       costDocs: results,
+      _debug: {
+        listStatus: listRes.status,
+        listLen: listRes.body.length,
+        listPreview: listRes.body.slice(0, 600),
+        listHasTable: listRes.body.includes('<table'),
+        costDocsParsed: costDocs.length,
+      }
     });
 
   } catch (err) {
