@@ -102,16 +102,31 @@ module.exports = async function handler(req, res) {
       }
     }
 
-    // Step 4: 메인 페이지로 접근해서 세션 유효성 검증
-    const verify = await makeRequest(`${EP_BASE}/v3/main.do`, {
+    // Step 4: v3 메인 페이지 접근 (v3 세션 초기화)
+    const verifyV3 = await makeRequest(`${EP_BASE}/v3/main.do`, {
       method: 'GET',
       headers: { 'User-Agent': ua, 'Cookie': cookieStr, 'Accept': 'text/html,*/*' }
     });
-    cookieStr = mergeCookies(cookieStr, verify.cookies);
-
-    // 로그인 실패 체크: 다시 login 페이지로 리다이렉트 됐으면 실패
-    if (verify.status === 302 && verify.location?.includes('login')) {
+    cookieStr = mergeCookies(cookieStr, verifyV3.cookies);
+    if (verifyV3.status === 302 && verifyV3.location?.includes('login')) {
       return res.status(401).json({ error: '로그인 실패. 아이디/비밀번호를 확인하세요.' });
+    }
+
+    // Step 5: WebFlow 컨텍스트 초기화 (list_MyWrite.do 접근을 위해 필수)
+    const verifyWF = await makeRequest(`${EP_BASE}/WebFlow/list_MyWrite.do`, {
+      method: 'GET',
+      headers: { 'User-Agent': ua, 'Cookie': cookieStr, 'Accept': 'text/html,*/*', 'Referer': `${EP_BASE}/v3/main.do` }
+    });
+    cookieStr = mergeCookies(cookieStr, verifyWF.cookies);
+
+    // Step 6: 리다이렉트가 있으면 따라가기
+    if (verifyWF.location) {
+      const wfRedirect = verifyWF.location.startsWith('http') ? verifyWF.location : `${EP_BASE}${verifyWF.location}`;
+      const verifyWF2 = await makeRequest(wfRedirect, {
+        method: 'GET',
+        headers: { 'User-Agent': ua, 'Cookie': cookieStr, 'Accept': 'text/html,*/*' }
+      });
+      cookieStr = mergeCookies(cookieStr, verifyWF2.cookies);
     }
 
     return res.status(200).json({ success: true, sessionCookie: cookieStr, message: '로그인 성공' });
