@@ -5,426 +5,386 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EP 비용문서 추출기</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0d0f14;
-      --surface: #161a23;
-      --surface2: #1e2330;
-      --border: #2a3145;
-      --accent: #4f7dff;
-      --accent2: #00e5c8;
-      --text: #e8ecf4;
-      --text-muted: #6b7a99;
-      --success: #22c55e;
-      --warning: #f59e0b;
-      --error: #ef4444;
-      --mono: 'IBM Plex Mono', monospace;
-      --sans: 'Pretendard', sans-serif;
+      --bg:#0d0f14; --surface:#161a23; --surface2:#1e2330; --border:#2a3145;
+      --accent:#4f7dff; --accent2:#00e5c8; --text:#e8ecf4; --muted:#6b7a99;
+      --ok:#22c55e; --warn:#f59e0b; --err:#ef4444;
+      --mono:'IBM Plex Mono',monospace; --sans:'Pretendard',sans-serif;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-    }
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image:
-        linear-gradient(rgba(79,125,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79,125,255,0.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(79,125,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(79,125,255,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
 
     /* Header */
-    header {
-      border-bottom: 1px solid var(--border);
-      padding: 18px 0;
-      background: rgba(13,15,20,0.92);
-      backdrop-filter: blur(12px);
-      position: sticky; top: 0; z-index: 100;
-    }
-    .header-inner { display: flex; align-items: center; gap: 14px; }
-    .logo { background: linear-gradient(135deg, var(--accent), var(--accent2)); width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-weight: 600; font-size: 13px; color: #fff; flex-shrink: 0; }
-    .header-title { font-size: 17px; font-weight: 700; }
-    .header-sub { font-size: 11px; color: var(--text-muted); font-family: var(--mono); }
-    .status-pill {
-      margin-left: auto;
-      display: flex; align-items: center; gap: 6px;
-      background: var(--surface2); border: 1px solid var(--border);
-      padding: 5px 12px; border-radius: 20px;
-      font-size: 12px; color: var(--text-muted); font-family: var(--mono);
-    }
-    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
-    .dot.ready { background: var(--success); box-shadow: 0 0 6px var(--success); }
-    .dot.loading { background: var(--warning); animation: blink 1s infinite; }
-    .dot.error { background: var(--error); }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+    header{border-bottom:1px solid var(--border);padding:16px 0;background:rgba(13,15,20,.92);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
+    .hdr{display:flex;align-items:center;gap:12px}
+    .logo{background:linear-gradient(135deg,var(--accent),var(--accent2));width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:13px;color:#fff;flex-shrink:0}
+    .hdr-title{font-size:17px;font-weight:700}
+    .hdr-sub{font-size:11px;color:var(--muted);font-family:var(--mono)}
+    .status-pill{margin-left:auto;display:flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:12px;color:var(--muted);font-family:var(--mono)}
+    .dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
+    .dot.ok{background:var(--ok);box-shadow:0 0 6px var(--ok)}
+    .dot.loading{background:var(--warn);animation:blink 1s infinite}
+    .dot.err{background:var(--err)}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
-    main { padding: 36px 0 80px; }
+    main{padding:32px 0 80px}
 
     /* Steps */
-    .steps { display: flex; gap: 10px; margin-bottom: 28px; }
-    .step { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 10px; transition: all .2s; }
-    .step.active { border-color: var(--accent); background: rgba(79,125,255,.07); }
-    .step.done { border-color: var(--success); background: rgba(34,197,94,.05); }
-    .step-num { width: 26px; height: 26px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; font-weight: 600; flex-shrink: 0; color: var(--text-muted); }
-    .step.active .step-num { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .step.done .step-num { background: var(--success); border-color: var(--success); color: #fff; }
-    .step-label { font-size: 13px; font-weight: 500; color: var(--text-muted); }
-    .step.active .step-label, .step.done .step-label { color: var(--text); }
+    .steps{display:flex;gap:10px;margin-bottom:24px}
+    .step{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 16px;display:flex;align-items:center;gap:10px;transition:all .2s}
+    .step.active{border-color:var(--accent);background:rgba(79,125,255,.07)}
+    .step.done{border-color:var(--ok);background:rgba(34,197,94,.05)}
+    .snum{width:26px;height:26px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:600;flex-shrink:0;color:var(--muted)}
+    .step.active .snum{background:var(--accent);border-color:var(--accent);color:#fff}
+    .step.done .snum{background:var(--ok);border-color:var(--ok);color:#fff}
+    .slabel{font-size:13px;font-weight:500;color:var(--muted)}
+    .step.active .slabel,.step.done .slabel{color:var(--text)}
 
     /* Panel */
-    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 18px; }
-    .panel-header { padding: 14px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--surface2); }
-    .panel-title { font-size: 13px; font-weight: 600; }
-    .panel-body { padding: 22px; }
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px}
+    .phdr{padding:13px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface2)}
+    .ptitle{font-size:13px;font-weight:600}
+    .pbody{padding:20px}
 
     /* Form */
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-    .form-row-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-    .field { display: flex; flex-direction: column; gap: 5px; }
-    label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; font-family: var(--mono); }
-    input[type="date"], input[type="text"], input[type="password"] {
-      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-      padding: 9px 13px; font-size: 13px; color: var(--text);
-      font-family: var(--mono); outline: none; width: 100%;
-      transition: border-color .2s, box-shadow .2s;
-    }
-    input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,125,255,.15); }
-    input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.6); cursor: pointer; }
+    .row{display:grid;gap:12px;margin-bottom:14px}
+    .row-2{grid-template-columns:1fr 1fr}
+    .row-4{grid-template-columns:1fr 1fr 1fr 1fr}
+    .field{display:flex;flex-direction:column;gap:5px}
+    label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)}
+    input[type=date],input[type=text],input[type=password]{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 13px;font-size:13px;color:var(--text);font-family:var(--mono);outline:none;width:100%;transition:border-color .2s,box-shadow .2s}
+    input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,125,255,.15)}
+    input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.6);cursor:pointer}
 
     /* Buttons */
-    .btn { padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; outline: none; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-family: var(--sans); }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover:not(:disabled) { background: #6b8fff; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(79,125,255,.35); }
-    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-    .btn:disabled { opacity: .4; cursor: not-allowed; }
-    .btn-sm { padding: 6px 12px; font-size: 11px; }
-    .btn-actions { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+    .btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;outline:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;font-family:var(--sans)}
+    .btn-p{background:var(--accent);color:#fff}
+    .btn-p:hover:not(:disabled){background:#6b8fff;transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,125,255,.35)}
+    .btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+    .btn-s:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+    .btn:disabled{opacity:.4;cursor:not-allowed}
+    .btn-sm{padding:6px 12px;font-size:11px}
+    .btns{display:flex;gap:10px;flex-wrap:wrap}
+
+    /* Info box */
+    .info-box{background:rgba(79,125,255,.07);border:1px solid rgba(79,125,255,.2);border-radius:10px;padding:14px 18px;font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px}
+    .info-box strong{color:var(--accent2)}
+    .info-box code{font-family:var(--mono);background:var(--surface2);padding:2px 6px;border-radius:4px;font-size:11px;color:var(--accent2)}
 
     /* Log */
-    .log-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px; height: 150px; overflow-y: auto; font-family: var(--mono); font-size: 12px; line-height: 1.8; }
-    .log-line { display: flex; gap: 10px; }
-    .log-time { color: var(--text-muted); flex-shrink: 0; }
-    .log-msg { color: var(--text); }
-    .log-msg.ok { color: var(--success); }
-    .log-msg.warn { color: var(--warning); }
-    .log-msg.err { color: var(--error); }
-    .log-msg.info { color: var(--accent2); }
+    .log-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:14px;height:140px;overflow-y:auto;font-family:var(--mono);font-size:12px;line-height:1.8}
+    .ll{display:flex;gap:10px}
+    .lt{color:var(--muted);flex-shrink:0}
+    .lm{color:var(--text)}
+    .lm.ok{color:var(--ok)} .lm.warn{color:var(--warn)} .lm.err{color:var(--err)} .lm.info{color:var(--accent2)}
 
     /* Table */
-    .table-wrap { overflow-x: auto; max-height: 520px; overflow-y: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    thead th { background: var(--surface2); padding: 11px 15px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); font-family: var(--mono); border-bottom: 1px solid var(--border); position: sticky; top: 0; white-space: nowrap; }
-    tbody tr { border-bottom: 1px solid rgba(42,49,69,.5); transition: background .12s; }
-    tbody tr:hover { background: rgba(79,125,255,.05); }
-    tbody td { padding: 10px 15px; vertical-align: middle; }
-    .cell-wrap { display: flex; align-items: center; gap: 6px; }
-    .cell-val { flex: 1; }
-    .cell-amt { font-family: var(--mono); font-weight: 600; color: var(--accent2); }
-    .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-family: var(--mono); background: rgba(79,125,255,.15); color: var(--accent); border: 1px solid rgba(79,125,255,.3); }
-    .row-num { font-family: var(--mono); font-size: 11px; color: var(--text-muted); text-align: center; }
-    .url-link { color: var(--accent); text-decoration: none; font-family: var(--mono); font-size: 11px; }
-    .url-link:hover { text-decoration: underline; }
-    .copy-btn { opacity: 0; padding: 2px 7px; font-size: 10px; border-radius: 4px; background: var(--surface2); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; font-family: var(--mono); transition: all .15s; white-space: nowrap; flex-shrink: 0; }
-    tbody tr:hover .copy-btn { opacity: 1; }
-    .copy-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .copy-btn.copied { background: var(--success); border-color: var(--success); color: #fff; opacity: 1; }
+    .twrap{overflow-x:auto;max-height:500px;overflow-y:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead th{background:var(--surface2);padding:10px 15px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-family:var(--mono);border-bottom:1px solid var(--border);position:sticky;top:0;white-space:nowrap}
+    tbody tr{border-bottom:1px solid rgba(42,49,69,.5);transition:background .12s}
+    tbody tr:hover{background:rgba(79,125,255,.05)}
+    tbody td{padding:10px 15px;vertical-align:middle}
+    .rn{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center}
+    .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-family:var(--mono);background:rgba(79,125,255,.15);color:var(--accent);border:1px solid rgba(79,125,255,.3)}
+    .amt{font-family:var(--mono);font-weight:600;color:var(--accent2)}
+    .url-link{color:var(--accent);font-family:var(--mono);font-size:11px;text-decoration:none}
+    .url-link:hover{text-decoration:underline}
+    .cbtn{opacity:0;padding:2px 8px;font-size:10px;border-radius:4px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;font-family:var(--mono);transition:all .15s;margin-left:6px}
+    tbody tr:hover .cbtn{opacity:1}
+    .cbtn:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+    .cbtn.copied{background:var(--ok);border-color:var(--ok);color:#fff;opacity:1}
+    .cbtn-row{opacity:1!important}
 
-    /* Summary bar */
-    .summary-bar { display: flex; gap: 16px; padding: 14px 22px; background: var(--surface2); border-top: 1px solid var(--border); align-items: center; flex-wrap: wrap; }
-    .sum-item { display: flex; flex-direction: column; gap: 1px; }
-    .sum-label { font-size: 10px; color: var(--text-muted); font-family: var(--mono); text-transform: uppercase; }
-    .sum-val { font-size: 18px; font-weight: 700; font-family: var(--mono); color: var(--accent2); }
-    .sum-div { width: 1px; height: 32px; background: var(--border); }
-    .sum-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+    /* Summary */
+    .sumbar{display:flex;gap:16px;padding:14px 20px;background:var(--surface2);border-top:1px solid var(--border);align-items:center;flex-wrap:wrap}
+    .si label{font-size:10px;color:var(--muted);font-family:var(--mono);text-transform:uppercase;display:block}
+    .si span{font-size:18px;font-weight:700;font-family:var(--mono);color:var(--accent2)}
+    .sdiv{width:1px;height:30px;background:var(--border)}
 
     /* Empty */
-    .empty { text-align: center; padding: 50px 20px; color: var(--text-muted); }
-    .empty-icon { font-size: 36px; margin-bottom: 10px; opacity: .4; }
-    .empty-text { font-size: 13px; }
+    .empty{text-align:center;padding:48px 20px;color:var(--muted)}
+    .empty-icon{font-size:34px;margin-bottom:10px;opacity:.4}
 
     /* Toast */
-    .toast { position: fixed; bottom: 28px; right: 28px; background: var(--success); color: #fff; padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; transform: translateY(50px); opacity: 0; transition: all .3s cubic-bezier(.34,1.56,.64,1); z-index: 999; pointer-events: none; }
-    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast{position:fixed;bottom:24px;right:24px;background:var(--ok);color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;font-weight:600;transform:translateY(50px);opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);z-index:999;pointer-events:none}
+    .toast.show{transform:translateY(0);opacity:1}
 
-    /* Scrollbar */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar{width:5px;height:5px}
+    ::-webkit-scrollbar-track{background:var(--bg)}
+    ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
 
-    @media (max-width: 700px) {
-      .form-row, .form-row-4 { grid-template-columns: 1fr 1fr; }
-      .steps { display: none; }
-    }
+    @media(max-width:700px){.row-4{grid-template-columns:1fr 1fr}.steps{display:none}}
   </style>
 </head>
 <body>
-
 <header>
-  <div class="container">
-    <div class="header-inner">
+  <div class="wrap">
+    <div class="hdr">
       <div class="logo">EP</div>
-      <div>
-        <div class="header-title">비용문서 추출기</div>
-        <div class="header-sub">ep.fursys.com · 작성문서함 자동 조회</div>
-      </div>
-      <div class="status-pill">
-        <div class="dot" id="statusDot"></div>
-        <span id="statusText">대기 중</span>
-      </div>
+      <div><div class="hdr-title">비용문서 추출기</div><div class="hdr-sub">ep.fursys.com · 작성문서함</div></div>
+      <div class="status-pill"><div class="dot" id="dot"></div><span id="stxt">대기 중</span></div>
     </div>
   </div>
 </header>
 
 <main>
-  <div class="container">
+<div class="wrap">
 
-    <!-- Steps -->
-    <div class="steps">
-      <div class="step active" id="step1"><div class="step-num" id="sn1">1</div><div class="step-label">로그인</div></div>
-      <div class="step" id="step2"><div class="step-num" id="sn2">2</div><div class="step-label">기간 설정 & 조회</div></div>
-      <div class="step" id="step3"><div class="step-num" id="sn3">3</div><div class="step-label">결과 확인</div></div>
-    </div>
-
-    <!-- Login Panel -->
-    <div class="panel" id="loginPanel">
-      <div class="panel-header">
-        <span>🔐</span>
-        <span class="panel-title">EP 로그인</span>
-      </div>
-      <div class="panel-body">
-        <div class="form-row">
-          <div class="field">
-            <label>EP 아이디</label>
-            <input type="text" id="epId" placeholder="사번 또는 아이디" autocomplete="username" />
-          </div>
-          <div class="field">
-            <label>비밀번호</label>
-            <input type="password" id="epPw" placeholder="EP 비밀번호" autocomplete="current-password" />
-          </div>
-        </div>
-        <div class="btn-actions">
-          <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">🔑 로그인</button>
-          <button class="btn btn-secondary btn-sm" onclick="clearAll()">↺ 초기화</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Date Panel -->
-    <div class="panel" id="datePanel" style="opacity:.4; pointer-events:none;">
-      <div class="panel-header">
-        <span>📅</span>
-        <span class="panel-title">조회 기간 설정</span>
-      </div>
-      <div class="panel-body">
-        <div class="form-row-4">
-          <div class="field">
-            <label>시작일</label>
-            <input type="date" id="dateFrom" />
-          </div>
-          <div class="field">
-            <label>종료일</label>
-            <input type="date" id="dateTo" />
-          </div>
-          <div style="display:flex; align-items:flex-end; gap:8px; grid-column: span 2;">
-            <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">🔍 문서 조회</button>
-            <button class="btn btn-secondary btn-sm" onclick="setThisMonth()">이번 달</button>
-            <button class="btn btn-secondary btn-sm" onclick="setLastMonth()">지난 달</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Log Panel -->
-    <div class="panel">
-      <div class="panel-header">
-        <span>📋</span>
-        <span class="panel-title">처리 로그</span>
-        <button class="btn btn-secondary btn-sm" style="margin-left:auto;" onclick="clearLog()">지우기</button>
-      </div>
-      <div class="panel-body" style="padding:14px;">
-        <div class="log-box" id="logBox">
-          <div class="log-line"><span class="log-time">00:00:00</span><span class="log-msg info">EP 비용문서 추출기가 준비됐습니다. EP 아이디와 비밀번호를 입력 후 로그인하세요.</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Result Panel -->
-    <div class="panel">
-      <div class="panel-header">
-        <span>📊</span>
-        <span class="panel-title">추출 결과</span>
-        <span style="margin-left:auto; font-size:12px; color:var(--text-muted); font-family:var(--mono);" id="resultCount">0건</span>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:36px;">#</th>
-              <th>계정과목</th>
-              <th>금액</th>
-              <th>내역</th>
-              <th>URL</th>
-              <th style="width:60px;"></th>
-            </tr>
-          </thead>
-          <tbody id="resultBody">
-            <tr><td colspan="6"><div class="empty"><div class="empty-icon">📂</div><div class="empty-text">조회 후 비용 문서가 여기에 표시됩니다</div></div></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="summary-bar" id="summaryBar" style="display:none;">
-        <div class="sum-item"><div class="sum-label">문서 수</div><div class="sum-val" id="sumDocs">0</div></div>
-        <div class="sum-div"></div>
-        <div class="sum-item"><div class="sum-label">총 금액</div><div class="sum-val" id="sumAmt">₩0</div></div>
-        <div class="sum-div"></div>
-        <div class="sum-item"><div class="sum-label">계정과목 종류</div><div class="sum-val" id="sumAccts">0</div></div>
-        <div class="sum-actions">
-          <button class="btn btn-secondary btn-sm" onclick="copyTSV()">📋 전체 복사 (구글시트/엑셀용)</button>
-          <button class="btn btn-primary btn-sm" onclick="downloadCSV()">⬇ CSV 다운로드</button>
-        </div>
-      </div>
-    </div>
-
+  <div class="steps">
+    <div class="step active" id="s1"><div class="snum" id="sn1">1</div><div class="slabel">EP 접속 확인</div></div>
+    <div class="step" id="s2"><div class="snum" id="sn2">2</div><div class="slabel">기간 설정 & 조회</div></div>
+    <div class="step" id="s3"><div class="snum" id="sn3">3</div><div class="slabel">결과 확인</div></div>
   </div>
-</main>
 
+  <!-- 안내 박스 -->
+  <div class="info-box" id="infoBox">
+    <strong>사용 방법</strong><br>
+    이 도구는 브라우저에서 EP 시스템에 직접 접근합니다.<br>
+    1. 먼저 <code><a href="https://ep.fursys.com" target="_blank" style="color:var(--accent2)">ep.fursys.com</a></code> 에 로그인하세요 (이미 로그인됐다면 건너뛰세요)<br>
+    2. 아래에서 조회 기간을 설정하고 <strong>문서 조회</strong>를 클릭하세요
+  </div>
+
+  <!-- 조회 패널 -->
+  <div class="panel">
+    <div class="phdr"><span>📅</span><span class="ptitle">조회 기간 설정</span></div>
+    <div class="pbody">
+      <div class="row row-4">
+        <div class="field"><label>시작일</label><input type="date" id="dateFrom"/></div>
+        <div class="field"><label>종료일</label><input type="date" id="dateTo"/></div>
+        <div style="display:flex;align-items:flex-end;gap:8px;grid-column:span 2">
+          <button class="btn btn-p" id="searchBtn" onclick="doSearch()">🔍 문서 조회</button>
+          <button class="btn btn-s btn-sm" onclick="setThisMonth()">이번 달</button>
+          <button class="btn btn-s btn-sm" onclick="setLastMonth()">지난 달</button>
+          <button class="btn btn-s btn-sm" onclick="resetAll()">↺ 초기화</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 로그 패널 -->
+  <div class="panel">
+    <div class="phdr"><span>📋</span><span class="ptitle">처리 로그</span><button class="btn btn-s btn-sm" style="margin-left:auto" onclick="clearLog()">지우기</button></div>
+    <div class="pbody" style="padding:14px">
+      <div class="log-box" id="logBox">
+        <div class="ll"><span class="lt">00:00:00</span><span class="lm info">EP 비용문서 추출기 준비 완료. EP 로그인 후 조회 기간을 설정하세요.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 결과 패널 -->
+  <div class="panel">
+    <div class="phdr"><span>📊</span><span class="ptitle">추출 결과</span><span style="margin-left:auto;font-size:12px;color:var(--muted);font-family:var(--mono)" id="rcnt">0건</span></div>
+    <div class="twrap">
+      <table>
+        <thead><tr><th style="width:36px">#</th><th>계정과목</th><th>금액</th><th>내역</th><th>URL</th><th style="width:60px"></th></tr></thead>
+        <tbody id="tbody">
+          <tr><td colspan="6"><div class="empty"><div class="empty-icon">📂</div><div>조회 후 비용 문서가 여기에 표시됩니다</div></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="sumbar" id="sumbar" style="display:none">
+      <div class="si"><label>문서 수</label><span id="sumDocs">0</span></div>
+      <div class="sdiv"></div>
+      <div class="si"><label>총 금액 (부가세 제외)</label><span id="sumAmt">₩0</span></div>
+      <div class="sdiv"></div>
+      <div class="si"><label>계정과목 종류</label><span id="sumAccts">0</span></div>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-s btn-sm" onclick="copyTSV()">📋 전체 복사 (구글시트/엑셀용)</button>
+        <button class="btn btn-p btn-sm" onclick="downloadCSV()">⬇ CSV 다운로드</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+</main>
 <div class="toast" id="toast"></div>
 
 <script>
-// ─────────────────────────────────────────────
-// 설정: Vercel 배포 후 자동으로 같은 도메인 사용
-// ─────────────────────────────────────────────
-const API_BASE = ''; // 같은 도메인 (Vercel 배포 시 자동)
+// ── 상수 ──────────────────────────────────────────────
+const EP = 'https://ep.fursys.com';
 
-let sessionCookie = null;
+const COST_TYPES = ['EA전표', '소액전표', '직원차량운행표', '대체전표', '매출외출고요청서(신)', '매출외출고요청서'];
+
+const COST_ACCOUNTS = [
+  '(판)접대비','(판)광고선전비','미수금(매출외)','(판)복리후생비','자가차량운행',
+  '(판)지급수수료','(판)교육훈련비','(판)경상연구개발비','(판)통신비',
+  '(판)하자보수비','(판)비품비','(판)소모품비','(판)물류비','(판)여비교통비'
+];
+
 let extractedData = [];
 
-// ── Utils ──────────────────────────────────────
+// ── 유틸 ──────────────────────────────────────────────
 function ts() { return new Date().toTimeString().slice(0,8); }
 
 function log(msg, type='') {
-  const box = document.getElementById('logBox');
-  const el = document.createElement('div');
-  el.className = 'log-line';
-  el.innerHTML = `<span class="log-time">${ts()}</span><span class="log-msg ${type}">${msg}</span>`;
-  box.appendChild(el);
-  box.scrollTop = box.scrollHeight;
+  const b = document.getElementById('logBox');
+  const d = document.createElement('div');
+  d.className = 'll';
+  d.innerHTML = `<span class="lt">${ts()}</span><span class="lm ${type}">${msg}</span>`;
+  b.appendChild(d);
+  b.scrollTop = b.scrollHeight;
 }
 
 function clearLog() { document.getElementById('logBox').innerHTML = ''; }
 
-function setStatus(state, text) {
-  document.getElementById('statusDot').className = 'dot ' + state;
-  document.getElementById('statusText').textContent = text;
+function setStatus(state, txt) {
+  document.getElementById('dot').className = 'dot ' + state;
+  document.getElementById('stxt').textContent = txt;
 }
 
 function setStep(n) {
-  for (let i = 1; i <= 3; i++) {
-    const step = document.getElementById('step'+i);
-    const num = document.getElementById('sn'+i);
-    step.className = 'step' + (i<n?' done':i===n?' active':'');
-    num.textContent = i < n ? '✓' : i;
+  for (let i=1;i<=3;i++) {
+    document.getElementById('s'+i).className = 'step'+(i<n?' done':i===n?' active':'');
+    document.getElementById('sn'+i).textContent = i<n ? '✓' : i;
   }
 }
 
 function toast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2800);
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-function fmtAmt(val) {
-  const n = parseInt(String(val).replace(/[^0-9]/g,''), 10);
-  return isNaN(n) ? val : '₩' + n.toLocaleString('ko-KR');
+function fmt(v) {
+  const n = parseInt(String(v).replace(/[^0-9]/g,''), 10);
+  return isNaN(n) ? v : '₩' + n.toLocaleString('ko-KR');
 }
 
 function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function truncUrl(url) {
-  if (!url) return '-';
-  try { const u = new URL(url); return u.pathname.slice(0,35) + (u.pathname.length>35?'…':''); }
-  catch { return String(url).slice(0,35); }
-}
-
-// 날짜 헬퍼
 function setThisMonth() {
   const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth(), 1);
-  document.getElementById('dateFrom').value = first.toISOString().slice(0,10);
+  document.getElementById('dateFrom').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
   document.getElementById('dateTo').value = now.toISOString().slice(0,10);
 }
+
 function setLastMonth() {
   const now = new Date();
-  const first = new Date(now.getFullYear(), now.getMonth()-1, 1);
-  const last = new Date(now.getFullYear(), now.getMonth(), 0);
-  document.getElementById('dateFrom').value = first.toISOString().slice(0,10);
-  document.getElementById('dateTo').value = last.toISOString().slice(0,10);
+  document.getElementById('dateFrom').value = new Date(now.getFullYear(), now.getMonth()-1, 1).toISOString().slice(0,10);
+  document.getElementById('dateTo').value = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0,10);
 }
 
-// ── Login ──────────────────────────────────────
-async function doLogin() {
-  const id = document.getElementById('epId').value.trim();
-  const pw = document.getElementById('epPw').value.trim();
-  if (!id || !pw) { log('아이디와 비밀번호를 입력하세요.', 'err'); return; }
+function resetAll() {
+  extractedData = [];
+  renderTable([]);
+  clearLog();
+  setStep(1);
+  setStatus('', '대기 중');
+  document.getElementById('dot').className = 'dot ok';
+  log('초기화됐습니다.', 'info');
+}
 
-  const btn = document.getElementById('loginBtn');
-  btn.disabled = true;
-  btn.textContent = '로그인 중...';
-  setStatus('loading', '로그인 중...');
-  log('EP 시스템 로그인 요청 중...', 'info');
-
-  try {
-    const res = await fetch(`${API_BASE}/api/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: id, password: pw }),
+// ── HTML 파싱 ──────────────────────────────────────────
+function parseDocList(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const docs = [];
+  const rows = doc.querySelectorAll('table tr');
+  rows.forEach(tr => {
+    const cells = [...tr.querySelectorAll('td')];
+    if (cells.length < 4) return;
+    const type = cells[1]?.textContent.trim();
+    if (!COST_TYPES.includes(type)) return;
+    const link = tr.querySelector('a');
+    docs.push({
+      docNo: cells[0]?.textContent.trim(),
+      type,
+      title: cells[2]?.textContent.trim(),
+      date: cells[3]?.textContent.trim(),
+      url: link?.href || '',
     });
-    const data = await res.json();
-
-    if (!res.ok || !data.success) {
-      log('로그인 실패: ' + (data.error || '알 수 없는 오류'), 'err');
-      setStatus('error', '로그인 실패');
-      btn.disabled = false;
-      btn.innerHTML = '🔑 로그인';
-      return;
-    }
-
-    sessionCookie = data.sessionCookie;
-    log('✓ 로그인 성공!', 'ok');
-    setStatus('ready', '로그인됨');
-    setStep(2);
-
-    // 날짜 패널 활성화
-    document.getElementById('datePanel').style.opacity = '1';
-    document.getElementById('datePanel').style.pointerEvents = 'auto';
-    btn.innerHTML = '✓ 로그인됨';
-    btn.style.background = 'var(--success)';
-
-  } catch (err) {
-    log('네트워크 오류: ' + err.message, 'err');
-    setStatus('error', '오류');
-    btn.disabled = false;
-    btn.innerHTML = '🔑 로그인';
-  }
+  });
+  return docs;
 }
 
-// ── Search ─────────────────────────────────────
-async function doSearch() {
-  if (!sessionCookie) { log('먼저 로그인하세요.', 'err'); return; }
+function parseDocDetail(html, url, docType) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const rows = [...doc.querySelectorAll('tr')];
 
+  // 내역: 제목 셀
+  let description = '';
+  for (const row of rows) {
+    const cells = [...row.querySelectorAll('th,td')];
+    for (let i=0; i<cells.length; i++) {
+      if (cells[i].textContent.trim() === '제목' && cells[i+1]) {
+        description = cells[i+1].textContent.trim();
+        break;
+      }
+    }
+    if (description) break;
+  }
+
+  let account = '', amount = 0;
+
+  if (docType === '직원차량운행표') {
+    // 계=자가차량운행, 금액=청구 합계, 내역=운행목적
+    account = '자가차량운행';
+    for (const row of rows) {
+      const cells = [...row.querySelectorAll('th,td')];
+      for (let i=0; i<cells.length; i++) {
+        const label = cells[i].textContent.trim();
+        if (label === '운행목적' && cells[i+1]) description = cells[i+1].textContent.trim();
+        if (label === '청구 합계' && cells[i+1]) {
+          const m = cells[i+1].textContent.trim().match(/^([\d,]+)\s*원/);
+          if (m) amount = parseInt(m[1].replace(/,/g,'')) || 0;
+        }
+      }
+    }
+  } else if (docType === '매출외출고요청서(신)' || docType === '매출외출고요청서') {
+    // 계정과목=미수금(매출외), 금액=헤더 '금액' 컬럼 인덱스의 '계' 행 값
+    account = '미수금(매출외)';
+    const tables = doc.querySelectorAll('table');
+    for (const tbl of tables) {
+      const headerRow = tbl.querySelector('tr');
+      if (!headerRow) continue;
+      const headers = [...headerRow.querySelectorAll('th,td')].map(c => c.textContent.trim().replace(/\s+/g,''));
+      const amtIdx = headers.indexOf('금액');
+      if (amtIdx < 0) continue;
+      const tblRows = [...tbl.querySelectorAll('tr')];
+      const kaeRow = tblRows.find(r => [...r.querySelectorAll('td')][0]?.textContent.trim() === '계');
+      if (!kaeRow) continue;
+      const kaeCells = [...kaeRow.querySelectorAll('td')];
+      const raw = kaeCells[amtIdx]?.textContent.trim().replace(/,/g,'');
+      if (raw && /^\d+$/.test(raw)) { amount = parseInt(raw) || 0; break; }
+    }
+  } else {
+    // EA전표 / 소액전표 / 대체전표: 계정과목+차변 테이블
+    const tables = doc.querySelectorAll('table');
+    for (const tbl of tables) {
+      const headers = [...tbl.querySelectorAll('th')].map(th => th.textContent.trim());
+      if (!headers.includes('계정과목')) continue;
+      const acctIdx = headers.indexOf('계정과목');
+      const debitIdx = headers.indexOf('차변');
+      if (acctIdx < 0 || debitIdx < 0) continue;
+      for (const row of tbl.querySelectorAll('tbody tr')) {
+        const cells = [...row.querySelectorAll('td')];
+        if (cells.length <= Math.max(acctIdx, debitIdx)) continue;
+        const acctText = cells[acctIdx]?.textContent.split('\n')[0].trim();
+        if (!acctText) continue;
+        const matched = COST_ACCOUNTS.find(a => acctText.includes(a));
+        if (matched) {
+          if (!account) account = acctText;
+          const raw = cells[debitIdx]?.textContent.replace(/,/g,'').replace(/-/g,'').trim();
+          amount += parseInt(raw) || 0;
+        }
+      }
+      break;
+    }
+  }
+
+  return { account, amount: String(amount), description, url };
+}
+
+// ── 조회 ──────────────────────────────────────────────
+async function doSearch() {
   const from = document.getElementById('dateFrom').value;
   const to = document.getElementById('dateTo').value;
   if (!from || !to) { log('기간을 선택하세요.', 'err'); return; }
@@ -434,104 +394,137 @@ async function doSearch() {
   btn.disabled = true;
   btn.textContent = '조회 중...';
   setStatus('loading', '문서 조회 중...');
+  setStep(2);
+
   log(`조회 기간: ${from} ~ ${to}`, 'info');
-  log('작성문서함 조회 중...', '');
+  log('EP 작성문서함 접속 중...', '');
 
   try {
-    const res = await fetch(`${API_BASE}/api/docs`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionCookie, dateFrom: from, dateTo: to }),
-    });
-    const data = await res.json();
+    // Step 1: 작성문서함 목록 GET (브라우저 세션 그대로 사용)
+    const listRes = await fetch(
+      `${EP}/WebFlow/list_MyWrite.do?frDt=${from}&toDt=${to}&deptCd=&_type=&_code=&_subj=&_name=`,
+      { credentials: 'include' }
+    );
 
-    if (!res.ok || !data.success) {
-      log('조회 실패: ' + (data.error || '알 수 없는 오류'), 'err');
-      if (data.error && data.error.includes('세션')) {
-        log('세션이 만료됐을 수 있습니다. 다시 로그인하세요.', 'warn');
-      }
-      setStatus('error', '조회 실패');
-      btn.disabled = false;
-      btn.innerHTML = '🔍 문서 조회';
+    if (!listRes.ok) throw new Error(`목록 조회 실패: HTTP ${listRes.status}`);
+
+    const listHtml = await listRes.text();
+
+    // EP 로그인 필요 여부 체크
+    if (listHtml.includes('j_username') || listHtml.includes('/account/login')) {
+      log('EP 로그인이 필요합니다. ep.fursys.com에 먼저 로그인하세요.', 'err');
+      log('로그인 후 다시 조회해주세요.', 'warn');
+      setStatus('err', 'EP 로그인 필요');
+      window.open('https://ep.fursys.com', '_blank');
       return;
     }
 
-    log(`전체 문서 ${data.total}건 조회됨`, '');
-    log(`비용 관련 문서 ${data.costCount}건 필터링 완료 ✓`, 'ok');
+    const costDocs = parseDocList(listHtml);
+    log(`전체 문서 조회 완료. 비용 문서 ${costDocs.length}건 발견.`, 'ok');
 
-    if (data.debug && data.debug.rawPreview) {
-      log('디버그 응답 미리보기: ' + data.debug.rawPreview.slice(0,100), 'warn');
+    if (costDocs.length === 0) {
+      log('해당 기간에 비용 문서(EA전표/소액전표/직원차량운행표/대체전표/매출외출고요청서)가 없습니다.', 'warn');
+      renderTable([]);
+      setStatus('ok', '0건');
+      setStep(3);
+      return;
     }
 
-    setStep(3);
-    setStatus('ready', `${data.costCount}건 추출 완료`);
-    renderTable(data.costDocs || []);
+    // Step 2: 각 문서 상세 접근
+    log(`상세 정보 추출 중 (${costDocs.length}건)...`, '');
+    const results = [];
+    for (let i=0; i<costDocs.length; i++) {
+      const doc = costDocs[i];
+      try {
+        const detailRes = await fetch(doc.url, { credentials: 'include' });
+        const detailHtml = await detailRes.text();
+        const detail = parseDocDetail(detailHtml, doc.url, doc.type);
+        results.push({
+          account: detail.account || doc.type,
+          amount: detail.amount,
+          description: detail.description || doc.title,
+          url: doc.url,
+        });
+        log(`[${i+1}/${costDocs.length}] ${doc.type} · ${detail.description || doc.title}`, 'ok');
+      } catch(e) {
+        log(`[${i+1}/${costDocs.length}] 상세 접근 실패: ${doc.title}`, 'warn');
+        results.push({ account: '', amount: '0', description: doc.title, url: doc.url });
+      }
+    }
 
-  } catch (err) {
-    log('네트워크 오류: ' + err.message, 'err');
-    setStatus('error', '오류');
+    log(`✓ 추출 완료: ${results.length}건`, 'ok');
+    setStep(3);
+    setStatus('ok', `${results.length}건 추출 완료`);
+    renderTable(results);
+
+  } catch(err) {
+    log('오류: ' + err.message, 'err');
+    if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+      log('ep.fursys.com 접근이 차단됐습니다. EP에 로그인 후 다시 시도하세요.', 'warn');
+      window.open('https://ep.fursys.com', '_blank');
+    }
+    setStatus('err', '오류 발생');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '🔍 문서 조회';
+    btn.textContent = '🔍 문서 조회';
   }
 }
 
-// ── Render ─────────────────────────────────────
+// ── 렌더링 ────────────────────────────────────────────
 function renderTable(data) {
   extractedData = data;
-  const tbody = document.getElementById('resultBody');
-  document.getElementById('resultCount').textContent = data.length + '건';
+  const tbody = document.getElementById('tbody');
+  document.getElementById('rcnt').textContent = data.length + '건';
 
   if (!data.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">조건에 맞는 비용 문서가 없습니다</div></div></td></tr>`;
-    document.getElementById('summaryBar').style.display = 'none';
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty"><div class="empty-icon">🔍</div><div>조건에 맞는 비용 문서가 없습니다</div></div></td></tr>`;
+    document.getElementById('sumbar').style.display = 'none';
     return;
   }
 
-  tbody.innerHTML = data.map((r, i) => `
+  tbody.innerHTML = data.map((r,i) => `
     <tr>
-      <td class="row-num">${i+1}</td>
-      <td><div class="cell-wrap"><span class="tag">${esc(r.account)}</span><button class="copy-btn" onclick="copyCell('${r.account.replace(/'/g,"\\'")}',this)">복사</button></div></td>
-      <td><div class="cell-wrap"><span class="cell-val cell-amt">${fmtAmt(r.amount)}</span><button class="copy-btn" onclick="copyCell('${r.amount.replace(/'/g,"\\'")}',this)">복사</button></div></td>
-      <td><div class="cell-wrap"><span class="cell-val">${esc(r.description)}</span><button class="copy-btn" onclick="copyCell('${r.description.replace(/'/g,"\\'")}',this)">복사</button></div></td>
-      <td><div class="cell-wrap">${r.url ? `<a class="url-link" href="${esc(r.url)}" target="_blank">${truncUrl(r.url)}</a>` : '<span style="color:var(--text-muted)">-</span>'}<button class="copy-btn" onclick="copyCell('${(r.url||'').replace(/'/g,"\\'")}',this)">복사</button></div></td>
-      <td><button class="copy-btn" style="opacity:1;" onclick="copyRow(${i})">행복사</button></td>
-    </tr>
-  `).join('');
+      <td class="rn">${i+1}</td>
+      <td><span class="tag">${esc(r.account||'?')}</span></td>
+      <td><span class="amt">${fmt(r.amount)}</span><button class="cbtn" onclick="cpCell('${escJs(r.amount)}',this)">복사</button></td>
+      <td>${esc(r.description)}<button class="cbtn" onclick="cpCell('${escJs(r.description)}',this)">복사</button></td>
+      <td>${r.url ? `<a class="url-link" href="${esc(r.url)}" target="_blank">문서 열기↗</a>` : '-'}<button class="cbtn" onclick="cpCell('${escJs(r.url)}',this)">복사</button></td>
+      <td><button class="cbtn cbtn-row" onclick="cpRow(${i})">행복사</button></td>
+    </tr>`).join('');
 
-  // Summary
-  const total = data.reduce((s,r) => s + (parseInt(r.amount.replace(/[^0-9]/g,''),10)||0), 0);
+  const total = data.reduce((s,r)=>s+(parseInt(r.amount)||0),0);
   document.getElementById('sumDocs').textContent = data.length;
   document.getElementById('sumAmt').textContent = '₩' + total.toLocaleString('ko-KR');
   document.getElementById('sumAccts').textContent = new Set(data.map(r=>r.account)).size;
-  document.getElementById('summaryBar').style.display = 'flex';
+  document.getElementById('sumbar').style.display = 'flex';
 }
 
-// ── Copy ───────────────────────────────────────
-async function copyCell(val, btn) {
-  await navigator.clipboard.writeText(val);
+function escJs(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+async function cpCell(v, btn) {
+  await navigator.clipboard.writeText(v);
   btn.textContent = '✓'; btn.classList.add('copied');
   setTimeout(() => { btn.textContent='복사'; btn.classList.remove('copied'); }, 1400);
 }
 
-function copyRow(i) {
+function cpRow(i) {
   const r = extractedData[i];
   navigator.clipboard.writeText([r.account, r.amount, r.description, r.url||''].join('\t'));
-  toast('행이 복사됐습니다 (탭 구분)');
+  toast('행 복사 완료');
 }
 
 function copyTSV() {
   const rows = extractedData.map(r => [r.account, r.amount, r.description, r.url||''].join('\t'));
   navigator.clipboard.writeText(rows.join('\n'));
-  toast('✅ 전체 복사 완료! 구글시트/엑셀에 Ctrl+V 하세요');
+  toast('✅ 전체 복사 완료! 구글시트에 Ctrl+V 하세요');
 }
 
 function downloadCSV() {
-  const header = '계정과목,금액,내역,URL';
+  const h = '계정과목,금액,내역,URL';
   const rows = extractedData.map(r =>
     [r.account, r.amount, r.description, r.url||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')
   );
-  const csv = '\uFEFF' + [header,...rows].join('\n');
+  const csv = '\uFEFF' + [h,...rows].join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
   a.download = `EP_비용문서_${new Date().toISOString().slice(0,10)}.csv`;
@@ -539,36 +532,12 @@ function downloadCSV() {
   toast('⬇ CSV 다운로드 시작');
 }
 
-function clearAll() {
-  sessionCookie = null;
-  extractedData = [];
-  document.getElementById('epId').value = '';
-  document.getElementById('epPw').value = '';
-  document.getElementById('datePanel').style.opacity = '.4';
-  document.getElementById('datePanel').style.pointerEvents = 'none';
-  document.getElementById('loginBtn').disabled = false;
-  document.getElementById('loginBtn').innerHTML = '🔑 로그인';
-  document.getElementById('loginBtn').style.background = '';
-  renderTable([]);
-  clearLog();
-  setStep(1);
-  setStatus('', '대기 중');
-  log('초기화됐습니다.', 'info');
-}
-
-// ── Enter key ──────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    if (!sessionCookie) doLogin();
-    else doSearch();
-  }
-});
-
-// ── Init ───────────────────────────────────────
-(function(){
+// ── 초기화 ────────────────────────────────────────────
+(function init() {
   setThisMonth();
-  document.getElementById('statusDot').classList.add('ready');
-  setStatus('ready', '준비 완료');
+  document.getElementById('dot').className = 'dot ok';
+  setStatus('ok', '준비 완료');
+  document.addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
 })();
 </script>
 </body>
