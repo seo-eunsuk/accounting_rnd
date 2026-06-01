@@ -6,17 +6,21 @@
       "dest": "/api/$1"
     },
     {
+      "src": "/extractor.js",
+      "dest": "/extractor.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/api/(.*)",
+      "source": "/extractor.js",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+        { "key": "Content-Type", "value": "application/javascript" },
+        { "key": "Cache-Control", "value": "no-cache" }
       ]
     }
   ]
