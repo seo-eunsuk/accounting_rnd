@@ -134,8 +134,10 @@
 
   // ── 초기화 ──────────────────────────────────────────
   const now = new Date();
+  const _initLastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const _initToDay = now.getDate() < _initLastDay.getDate() ? now : _initLastDay;
   document.getElementById('_ep_from').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0,10);
-  document.getElementById('_ep_to').value = now.toISOString().slice(0,10);
+  document.getElementById('_ep_to').value   = _initToDay.toISOString().slice(0,10);
 
   let _epData = [];
 
@@ -156,14 +158,20 @@
 
   window._epThisMonth = function() {
     const n = new Date();
-    document.getElementById('_ep_from').value = new Date(n.getFullYear(), n.getMonth(), 1).toISOString().slice(0,10);
-    document.getElementById('_ep_to').value = n.toISOString().slice(0,10);
+    const firstDay = new Date(n.getFullYear(), n.getMonth(), 1);
+    const lastDay  = new Date(n.getFullYear(), n.getMonth() + 1, 0); // 이번달 말일
+    // 오늘이 말일 전이면 오늘까지, 말일이면 말일까지
+    const toDay = n.getDate() < lastDay.getDate() ? n : lastDay;
+    document.getElementById('_ep_from').value = firstDay.toISOString().slice(0,10);
+    document.getElementById('_ep_to').value   = toDay.toISOString().slice(0,10);
   };
 
   window._epLastMonth = function() {
     const n = new Date();
-    document.getElementById('_ep_from').value = new Date(n.getFullYear(), n.getMonth()-1, 1).toISOString().slice(0,10);
-    document.getElementById('_ep_to').value = new Date(n.getFullYear(), n.getMonth(), 0).toISOString().slice(0,10);
+    const firstDay = new Date(n.getFullYear(), n.getMonth() - 1, 1);
+    const lastDay  = new Date(n.getFullYear(), n.getMonth(), 0); // 지난달 말일 (항상 말일까지)
+    document.getElementById('_ep_from').value = firstDay.toISOString().slice(0,10);
+    document.getElementById('_ep_to').value   = lastDay.toISOString().slice(0,10);
   };
 
   window._epFmt = function(v) {
