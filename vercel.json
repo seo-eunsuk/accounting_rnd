@@ -2,15 +2,11 @@
   "version": 2,
   "headers": [
     {
-      "source": "/extractor.js",
+      "source": "/api/extractor.js",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
-        { "key": "Cache-Control", "value": "no-cache, no-store" }
+        { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
       ]
     }
-  ],
-  "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/:path*" }
   ]
 }
