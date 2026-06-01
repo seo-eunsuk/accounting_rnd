@@ -3,6 +3,6 @@
   "version": "1.0.0",
   "description": "EP 비용문서 자동 추출기",
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   }
 }
